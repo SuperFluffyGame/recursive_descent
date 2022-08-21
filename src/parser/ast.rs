@@ -19,4 +19,6 @@ pub enum Expr {
 
     Block(Vec<Expr>),
     Let(String, Box<Expr>),
+
+    Return(Box<Expr>),
 }

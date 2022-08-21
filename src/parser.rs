@@ -28,10 +28,8 @@ pub fn assignment_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 }
 
 pub fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    let tok = lexer.next_token.clone();
-
     let mut let_lexer = lexer.clone();
-    let let_expr = function_call(&mut let_lexer);
+    let let_expr = let_expr(&mut let_lexer);
     if let Ok(expr) = let_expr {
         *lexer = let_lexer;
         return Ok(expr);
@@ -44,6 +42,7 @@ pub fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
         return Ok(expr);
     }
 
+    let tok = lexer.next_token.clone();
     if let Token::Identifier(i) = tok {
         lexer.scan();
         return Ok(Expr::Ident(i));
@@ -53,7 +52,7 @@ pub fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     } else if let Token::LBracket = tok {
         return Ok(array(lexer)?);
     } else if let Token::LBrace = tok {
-        return Ok(block(lexer)?);
+        return Ok(block_expr(lexer)?);
     } else if let Token::Number(n) = tok {
         lexer.scan();
         return Ok(Expr::Number(n));
@@ -120,7 +119,7 @@ pub fn exp_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = primary_expr(lexer)?;
 
     loop {
-        if let Token::Caret = lexer.next_token {
+        if let Token::DoubleAsterisk = lexer.next_token {
             lexer.scan();
             let b = unary_expr(lexer)?;
             a = Expr::Exp(Box::new(a), Box::new(b));
@@ -155,11 +154,17 @@ pub fn let_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 pub fn statement(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let expr = expr(lexer)?;
 
+    if let Expr::Block(_) = &expr {
+        if let Token::SemiColon = lexer.next_token {
+            lexer.scan();
+        }
+        return Ok(expr);
+    }
     if let Token::SemiColon = lexer.next_token {
         lexer.scan();
         return Ok(expr);
     } else {
-        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+        return Ok(Expr::Return(Box::new(expr)));
     }
 }
 
@@ -233,19 +238,31 @@ pub fn array(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     }
 }
 
-pub fn block(lexer: &mut Lexer) -> Result<Expr, ParserError> {
+pub fn block_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     if let Token::LBrace = lexer.next_token {
         lexer.scan();
         let mut o = Vec::new();
 
         loop {
-            if let Token::EOF = lexer.next_token {
+            if let Token::RBrace = lexer.next_token {
+                lexer.scan();
                 return Ok(Expr::Block(o));
-            } else {
-                let stmt = statement(lexer)?;
-                o.push(stmt);
             }
+
+            let stmt = statement(lexer)?;
+            o.push(stmt);
         }
+    } else {
+        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+    }
+}
+
+pub fn return_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
+    if let Token::Return = lexer.next_token {
+        lexer.scan();
+        let expr = expr(lexer)?;
+
+        return Ok(Expr::Return(Box::new(expr)));
     } else {
         return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
     }

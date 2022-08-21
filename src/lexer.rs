@@ -9,6 +9,7 @@ pub enum Token {
     Asterisk,
     Slash,
     Caret,
+    DoubleAsterisk,
 
     LParen,
     RParen,
@@ -22,12 +23,11 @@ pub enum Token {
     Comma,
 
     Let,
+    Return,
 
     EOF,
     Unexpected(char),
 }
-
-const KEYWORDS: [&str; 1] = ["let"];
 
 #[derive(Clone)]
 pub struct Lexer {
@@ -57,7 +57,15 @@ impl Lexer {
             let t = match c {
                 '+' => Token::Plus,
                 '-' => Token::Minus,
-                '*' => Token::Asterisk,
+                '*' => {
+                    let o = if let Some('*') = chars.peek() {
+                        chars.next();
+                        Token::DoubleAsterisk
+                    } else {
+                        Token::Asterisk
+                    };
+                    o
+                }
                 '/' => Token::Slash,
                 '^' => Token::Caret,
                 '(' => Token::LParen,
@@ -92,11 +100,13 @@ impl Lexer {
                         }
 
                         let mut kw_token: Option<Token> = None;
-                        for kw in KEYWORDS {
-                            if s == kw {
-                                kw_token = Some(Token::Let);
-                            }
+
+                        match &s as &str {
+                            "let" => kw_token = Some(Token::Let),
+                            "return " => kw_token = Some(Token::Return),
+                            _ => {}
                         }
+
                         if let None = kw_token {
                             kw_token = Some(Token::Identifier(s));
                         }

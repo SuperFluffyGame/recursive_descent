@@ -4,14 +4,16 @@ AddExpr -> MulExpr (+|- MulExpr)*
 MulExpr -> UnaryExpr (*|/ UnaryExpr)*
 UnaryExpr -> -ExpExpr | ExpExpr
 ExpExpr -> ExpExpr (^ UnaryExpr)*
-PrimaryExpr -> FunctionCall | ID | Number | '(' Expr ')'
+PrimaryExpr -> Block | LetExpr | FunctionCall | ID | Number | '(' Expr ')'
 
-LetStmt -> LET ID = AddExpr ;
-ExprStmt -> Expr
-Statement -> LetStmt | ExprStmt
+LetExpr -> let ID = Expr
+ReturnExpr -> Expr | return Expr
+
+Statement -> Expr ;
 
 Program -> Statement*
 
 ExprList -> (Expr) (, Expr)*
 FunctionCall -> ID '(' ExprList ')'
 Array -> '[' ExprList ']'
+Block -> '{' Statement* '}'

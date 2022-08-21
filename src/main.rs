@@ -12,21 +12,16 @@ fn main() {
     let mut input: String = String::new();
     file.read_to_string(&mut input).unwrap();
 
-    let mut lexer = Lexer::new(input);
-
-    // for _ in 1..10 {
-    //     println!("{:?}", lexer.next_token);
-    //     lexer.scan();
-    // }
-
     let a = std::time::Instant::now();
+    let mut lexer = Lexer::new(input);
     let o = parse(&mut lexer).unwrap();
     let b = std::time::Instant::now();
 
-    println!("{:?}; TIME: {:?}", o, b - a);
+    println!("TREE: {:?}", o);
+    println!("PARSE: {:?}", b - a);
 
     let a = std::time::Instant::now();
     run(&o).unwrap();
     let b = std::time::Instant::now();
-    println!("TIME: {:?}", b - a);
+    println!("INTERPRET: {:?}", b - a);
 }
