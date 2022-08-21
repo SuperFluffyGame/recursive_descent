@@ -24,6 +24,7 @@ pub enum Token {
 
     Let,
     Return,
+    Fn,
 
     EOF,
     Unexpected(char),
@@ -104,6 +105,7 @@ impl Lexer {
                         match &s as &str {
                             "let" => kw_token = Some(Token::Let),
                             "return " => kw_token = Some(Token::Return),
+                            "fn" => kw_token = Some(Token::Fn),
                             _ => {}
                         }
 

@@ -1,9 +1,11 @@
+fn double (a, b) {
+    a + b
+}
+
+
 let b = 2;
 
 a = b = b ** 2;
 
 print(a, b);
 
-{
-    let a = 1
-}

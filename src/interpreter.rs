@@ -25,6 +25,7 @@ enum Value {
     Number(f64),
     Array(Vec<Value>),
     None,
+    Function(Option<String>, Vec<String>, Expr),
 }
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -52,6 +53,17 @@ impl std::fmt::Display for Value {
                 }
                 o += "]";
             }
+            Value::Function(args, _block) => {
+                o += "fn (";
+                for (i, arg) in args.iter().enumerate() {
+                    o += arg;
+                    if i == args.len() - 1 {
+                        break;
+                    }
+                    o += ", ";
+                }
+                o += ") { [CODE] }"
+            }
         }
         write!(f, "{}", o)
     }
@@ -59,19 +71,21 @@ impl std::fmt::Display for Value {
 
 fn run_function(
     memory: &mut Memory,
-    name: &String,
+    value_to_call: Value,
     args: &Vec<Expr>,
 ) -> Result<Value, InterpreterError> {
-    if name == "print" {
-        let mut vals = Vec::new();
-        for a in args {
-            vals.push(eval_expr(memory, a)?);
-        }
-        print(&vals)?;
-        return Ok(Value::None);
-    } else {
-        panic!("Function doesnt exists")
-    }
+    todo!();
+
+    // if name == "print" {
+    //     let mut vals = Vec::new();
+    //     for a in args {
+    //         vals.push(eval_expr(memory, a)?);
+    //     }
+    //     print(&vals)?;
+    //     return Ok(Value::None);
+    // } else {
+    //     panic!("Function doesnt exists")
+    // }
 }
 
 fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError> {
@@ -92,7 +106,7 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
                 return Err(InterpreterError::VariableDoesntExist(i.clone()));
             }
         }
-        Expr::FunctionCall(name, args) => run_function(memory, name, args),
+        Expr::FunctionCall(name, args) => run_function(memory, eval_expr(memory, expr)?, args),
         Expr::Add(a, b) => {
             let a = eval_expr(memory, a)?;
             let b = eval_expr(memory, b)?;
@@ -126,6 +140,7 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
 
             return Ok(val);
         }
+        // Expr::FunctionDeclaration(name, args, block) => Value::F
         _ => todo!(),
     }
 }

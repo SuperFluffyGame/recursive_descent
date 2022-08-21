@@ -14,11 +14,13 @@ pub enum Expr {
     String(String),
     Ident(String),
 
-    FunctionCall(String, Vec<Expr>),
+    FunctionCall(Box<Expr>, Vec<Expr>),
     Array(Vec<Expr>),
 
     Block(Vec<Expr>),
     Let(String, Box<Expr>),
 
     Return(Box<Expr>),
+
+    FunctionDeclaration(Option<String>, Vec<Expr>, Box<Expr>),
 }
