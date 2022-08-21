@@ -1,0 +1,16 @@
+Expr -> AddExpr
+AddExpr -> MulExpr (+|- MulExpr)+
+MulExpr -> UnaryExpr (*|/ UnaryExpr)+
+UnaryExpr -> -ExpExpr | ExpExpr
+ExpExpr -> ExpExpr (^ UnaryExpr)*
+PrimaryExpr -> FunctionCall | ID | Number | '(' Expr ')'
+
+LetStmt -> LET ID = AddExpr ;
+ExprStmt -> Expr
+Statement -> LetStmt | ExprStmt
+
+Program -> Statement*
+
+ExprList -> (Expr) (, Expr)*
+FunctionCall -> ID '(' ExprList ')'
+Array -> '[' ExprList ']'
