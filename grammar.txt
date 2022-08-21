@@ -1,5 +1,5 @@
 Expr -> AssignmentExpr
-AssignmentExpr -> ID ( = AddExpr)*
+AssignmentExpr -> AddExpr (= AddExpr)*
 AddExpr -> MulExpr (+|- MulExpr)*
 MulExpr -> UnaryExpr (*|/ UnaryExpr)*
 UnaryExpr -> -ExpExpr | ExpExpr

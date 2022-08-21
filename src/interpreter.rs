@@ -1,4 +1,4 @@
-use crate::parser::{Expr, Statement};
+use crate::parser::Expr;
 use std::collections::HashMap;
 type Memory = HashMap<String, Value>;
 
@@ -9,16 +9,11 @@ pub enum InterpreterError {
     InvalidLeftHandSide(Expr),
 }
 
-pub fn run(statements: &Vec<Statement>) -> Result<(), InterpreterError> {
+pub fn run(exprs: &Vec<Expr>) -> Result<(), InterpreterError> {
     let mut memory: Memory = HashMap::new();
 
-    for statement in statements.iter() {
-        if let Statement::Let(id, value) = statement {
-            let val = eval_expr(&mut memory, &value)?;
-            memory.insert(id.clone(), val);
-        } else if let Statement::Expr(e) = statement {
-            eval_expr(&mut memory, &e)?;
-        }
+    for expr in exprs.iter() {
+        eval_expr(&mut memory, expr)?;
     }
 
     Ok(())
@@ -81,6 +76,12 @@ fn run_function(
 
 fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError> {
     match expr {
+        Expr::Let(i, v) => {
+            let val = eval_expr(memory, v)?;
+            memory.insert(i.clone(), val.clone());
+
+            Ok(val)
+        }
         Expr::Number(n) => Ok(Value::Number(*n)),
         Expr::String(s) => Ok(Value::String(s.clone())),
         Expr::Ident(i) => {

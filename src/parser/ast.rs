@@ -17,12 +17,6 @@ pub enum Expr {
     FunctionCall(String, Vec<Expr>),
     Array(Vec<Expr>),
 
-    Block(Vec<Statement>),
-}
-
-#[derive(Debug, Clone)]
-pub enum Statement {
-    Let(String, Expr),
-    Assignment(String, Expr),
-    Expr(Expr),
+    Block(Vec<Expr>),
+    Let(String, Box<Expr>),
 }

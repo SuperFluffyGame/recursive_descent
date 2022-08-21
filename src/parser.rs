@@ -2,7 +2,6 @@ mod ast;
 
 use crate::lexer::{Lexer, Token};
 pub use ast::Expr;
-pub use ast::Statement;
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -30,6 +29,13 @@ pub fn assignment_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 
 pub fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let tok = lexer.next_token.clone();
+
+    let mut let_lexer = lexer.clone();
+    let let_expr = function_call(&mut let_lexer);
+    if let Ok(expr) = let_expr {
+        *lexer = let_lexer;
+        return Ok(expr);
+    }
 
     let mut function_call_lexer = lexer.clone();
     let function_call_expr = function_call(&mut function_call_lexer);
@@ -124,7 +130,7 @@ pub fn exp_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     }
 }
 
-pub fn let_statement(lexer: &mut Lexer) -> Result<Statement, ParserError> {
+pub fn let_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     if let Token::Let = lexer.next_token {
         lexer.scan();
         if let Token::Identifier(i) = lexer.next_token.clone() {
@@ -132,7 +138,7 @@ pub fn let_statement(lexer: &mut Lexer) -> Result<Statement, ParserError> {
             if let Token::Equal = lexer.next_token {
                 lexer.scan();
                 let expr = expr(lexer)?;
-                let stmt = Statement::Let(i, expr);
+                let stmt = Expr::Let(i, Box::new(expr));
 
                 Ok(stmt)
             } else {
@@ -146,44 +152,18 @@ pub fn let_statement(lexer: &mut Lexer) -> Result<Statement, ParserError> {
     }
 }
 
-pub fn expr_statement(lexer: &mut Lexer) -> Result<Statement, ParserError> {
-    let expr = expr(lexer);
+pub fn statement(lexer: &mut Lexer) -> Result<Expr, ParserError> {
+    let expr = expr(lexer)?;
 
-    if let Ok(expr) = expr {
-        return Ok(Statement::Expr(expr));
-    } else {
-        return Err(expr.unwrap_err());
-    }
-}
-
-pub fn statement(lexer: &mut Lexer) -> Result<Statement, ParserError> {
-    let mut o_stmt: Option<Statement> = None;
-
-    let mut let_lexer = lexer.clone();
-    let let_statement = let_statement(&mut let_lexer);
-    if let Ok(stmt) = let_statement {
-        *lexer = let_lexer;
-        o_stmt = Some(stmt);
-    }
-
-    let mut expr_lexer = lexer.clone();
-    let expr_statement = expr_statement(&mut expr_lexer);
-    if let Ok(stmt) = expr_statement {
-        *lexer = expr_lexer;
-        o_stmt = Some(stmt);
-    }
-
-    if let None = o_stmt {
-        Err(ParserError::UnexpectedToken(lexer.next_token.clone()))
-    } else if let Token::SemiColon = lexer.next_token.clone() {
+    if let Token::SemiColon = lexer.next_token {
         lexer.scan();
-        Ok(o_stmt.unwrap())
+        return Ok(expr);
     } else {
-        Err(ParserError::UnexpectedToken(lexer.next_token.clone()))
+        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
     }
 }
 
-pub fn program(lexer: &mut Lexer) -> Result<Vec<Statement>, ParserError> {
+pub fn program(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
     let mut o = Vec::new();
 
     loop {
