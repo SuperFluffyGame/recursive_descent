@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
@@ -8,15 +8,19 @@ pub enum Expr {
     Mod(Box<Expr>, Box<Expr>),
     Neg(Box<Expr>),
 
+    Assign(Box<Expr>, Box<Expr>),
+
     Number(f64),
     String(String),
     Ident(String),
 
     FunctionCall(String, Vec<Expr>),
     Array(Vec<Expr>),
+
+    Block(Vec<Statement>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     Let(String, Expr),
     Assignment(String, Expr),

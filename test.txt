@@ -1,4 +1,5 @@
-let a = "hello";
-let b = " world";
-let c = a + b;
-print(c);
+b = 2;
+
+a = b = b ^ 2;
+
+print(a, b);

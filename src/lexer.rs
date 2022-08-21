@@ -14,6 +14,8 @@ pub enum Token {
     RParen,
     LBracket,
     RBracket,
+    LBrace,
+    RBrace,
 
     Equal,
     SemiColon,
@@ -65,6 +67,8 @@ impl Lexer {
                 '=' => Token::Equal,
                 ';' => Token::SemiColon,
                 ',' => Token::Comma,
+                '{' => Token::LBrace,
+                '}' => Token::RBrace,
                 '"' => {
                     let mut s = String::new();
                     while let Some(c) = chars.next() {

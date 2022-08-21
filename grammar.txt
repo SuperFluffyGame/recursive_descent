@@ -1,6 +1,7 @@
-Expr -> AddExpr
-AddExpr -> MulExpr (+|- MulExpr)+
-MulExpr -> UnaryExpr (*|/ UnaryExpr)+
+Expr -> AssignmentExpr
+AssignmentExpr -> ID ( = AddExpr)*
+AddExpr -> MulExpr (+|- MulExpr)*
+MulExpr -> UnaryExpr (*|/ UnaryExpr)*
 UnaryExpr -> -ExpExpr | ExpExpr
 ExpExpr -> ExpExpr (^ UnaryExpr)*
 PrimaryExpr -> FunctionCall | ID | Number | '(' Expr ')'

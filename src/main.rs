@@ -26,7 +26,7 @@ fn main() {
     println!("{:?}; TIME: {:?}", o, b - a);
 
     let a = std::time::Instant::now();
-    run(&o);
+    run(&o).unwrap();
     let b = std::time::Instant::now();
     println!("TIME: {:?}", b - a);
 }
