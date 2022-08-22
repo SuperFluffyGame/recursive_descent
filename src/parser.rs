@@ -1,13 +1,42 @@
 mod ast;
 
-use crate::lexer::{Lexer, Token};
+use crate::lexer::{Lexeme, Lexer, Token};
 pub use ast::Expr;
 pub type ParseResult = Result<Expr, ParserError>;
 
 #[derive(Debug)]
 pub enum ParserError {
-    UnexpectedToken(Token),
-    UnexpectedEOF,
+    ExpectedButGot(Vec<Lexeme>, Token),
+}
+impl std::fmt::Display for ParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExpectedButGot(expected_vec, got) => {
+                let mut expected_string = String::new();
+
+                for (i, expected) in expected_vec.iter().enumerate() {
+                    if expected_vec.len() > 1 && i == expected_vec.len() - 2 {
+                        expected_string += &format!(", or {}", expected);
+                        break;
+                    } else if i == 0 {
+                        expected_string += &format!("{}", expected);
+                        continue;
+                    }
+                    expected_string += &format!(", {}", expected);
+                }
+
+                let string = format!(
+                    "expected {}, but got {} at line {}, column {}",
+                    expected_string,
+                    got.lexeme,
+                    got.line + 1,
+                    got.column + 1
+                );
+
+                writeln!(f, "{}", string)
+            }
+        }
+    }
 }
 
 fn expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
@@ -18,7 +47,7 @@ fn assignment_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = add_expr(lexer)?;
 
     loop {
-        if let Token::Equal = lexer.next_token {
+        if let Lexeme::Equal = lexer.next_token.lexeme {
             lexer.scan();
             let b = expr(lexer)?;
             a = Expr::Assign(Box::new(a), Box::new(b));
@@ -29,6 +58,18 @@ fn assignment_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 }
 
 fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
+    let expects: Vec<Lexeme> = vec![
+        Lexeme::Let,
+        Lexeme::Identifier(String::new()),
+        Lexeme::String(String::new()),
+        Lexeme::Return,
+        Lexeme::Fn,
+        Lexeme::LBracket,
+        Lexeme::LBrace,
+        Lexeme::Number(0.0),
+        Lexeme::LParen,
+    ];
+
     let mut let_lexer = lexer.clone();
     let let_expr = let_expr(&mut let_lexer);
     if let Ok(expr) = let_expr {
@@ -36,42 +77,42 @@ fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
         return Ok(expr);
     }
 
-    // let mut function_call_lexer = lexer.clone();
-    // let function_call_expr = function_call(&mut function_call_lexer);
-    // if let Ok(expr) = function_call_expr {
-    //     *lexer = function_call_lexer;
-    //     return Ok(expr);
-    // }
-
     let tok = lexer.next_token.clone();
-    if let Token::Identifier(i) = tok {
+    let lexeme = tok.lexeme.clone();
+    if let Lexeme::Identifier(i) = lexeme {
         lexer.scan();
         return Ok(Expr::Ident(i));
-    } else if let Token::String(s) = tok {
+    } else if let Lexeme::String(s) = lexeme {
         lexer.scan();
         return Ok(Expr::String(s));
-    } else if let Token::Return = tok {
+    } else if let Lexeme::Return = lexeme {
         return return_expr(lexer);
-    } else if let Token::Fn = tok {
+    } else if let Lexeme::Fn = lexeme {
         return function_declaration(lexer);
-    } else if let Token::LBracket = tok {
+    } else if let Lexeme::LBracket = lexeme {
         return array(lexer);
-    } else if let Token::LBrace = tok {
+    } else if let Lexeme::LBrace = lexeme {
         return block_expr(lexer);
-    } else if let Token::Number(n) = tok {
+    } else if let Lexeme::Number(n) = lexeme {
         lexer.scan();
         return Ok(Expr::Number(n));
-    } else if let Token::LParen = tok {
+    } else if let Lexeme::LParen = lexeme {
         lexer.scan();
         let expr = expr(lexer)?;
-        if let Token::RParen = lexer.next_token {
+        if let Lexeme::RParen = lexer.next_token.lexeme {
             lexer.scan();
             return Ok(expr);
         } else {
-            return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+            return Err(ParserError::ExpectedButGot(
+                vec![Lexeme::RParen],
+                lexer.next_token.clone(),
+            ));
         }
     } else {
-        return Err(ParserError::UnexpectedToken(tok));
+        return Err(ParserError::ExpectedButGot(
+            expects,
+            lexer.next_token.clone(),
+        ));
     }
 }
 
@@ -79,11 +120,11 @@ fn add_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = mul_expr(lexer)?;
 
     loop {
-        if let Token::Plus = lexer.next_token {
+        if let Lexeme::Plus = lexer.next_token.lexeme {
             lexer.scan();
             let b = mul_expr(lexer)?;
             a = Expr::Add(Box::new(a), Box::new(b));
-        } else if let Token::Minus = lexer.next_token {
+        } else if let Lexeme::Minus = lexer.next_token.lexeme {
             lexer.scan();
             let b = mul_expr(lexer)?;
             a = Expr::Sub(Box::new(a), Box::new(b));
@@ -97,11 +138,11 @@ fn mul_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = unary_expr(lexer)?;
 
     loop {
-        if let Token::Asterisk = lexer.next_token {
+        if let Lexeme::Asterisk = lexer.next_token.lexeme {
             lexer.scan();
             let b = unary_expr(lexer)?;
             a = Expr::Mul(Box::new(a), Box::new(b));
-        } else if let Token::Slash = lexer.next_token {
+        } else if let Lexeme::Slash = lexer.next_token.lexeme {
             lexer.scan();
             let b = unary_expr(lexer)?;
             a = Expr::Div(Box::new(a), Box::new(b));
@@ -112,7 +153,7 @@ fn mul_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 }
 
 fn unary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    if let Token::Minus = lexer.next_token {
+    if let Lexeme::Minus = lexer.next_token.lexeme {
         lexer.scan();
         return Ok(Expr::Neg(Box::new(exp_expr(lexer)?)));
     } else {
@@ -124,7 +165,7 @@ fn exp_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = function_call(lexer)?;
 
     loop {
-        if let Token::DoubleAsterisk = lexer.next_token {
+        if let Lexeme::DoubleAsterisk = lexer.next_token.lexeme {
             lexer.scan();
             let b = unary_expr(lexer)?;
             a = Expr::Exp(Box::new(a), Box::new(b));
@@ -138,14 +179,17 @@ fn function_call(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let mut a = primary_expr(lexer)?;
 
     loop {
-        if let Token::LParen = lexer.next_token {
+        if let Lexeme::LParen = lexer.next_token.lexeme {
             lexer.scan();
             let exprs = expr_list(lexer)?;
-            if let Token::RParen = lexer.next_token {
+            if let Lexeme::RParen = lexer.next_token.lexeme {
                 lexer.scan();
                 a = Expr::FunctionCall(Box::new(a), exprs);
             } else {
-                return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+                return Err(ParserError::ExpectedButGot(
+                    vec![Lexeme::RParen],
+                    lexer.next_token.clone(),
+                ));
             }
         } else {
             return Ok(a);
@@ -154,24 +198,33 @@ fn function_call(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 }
 
 fn let_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    if let Token::Let = lexer.next_token {
+    if let Lexeme::Let = lexer.next_token.lexeme {
         lexer.scan();
-        if let Token::Identifier(i) = lexer.next_token.clone() {
+        if let Lexeme::Identifier(i) = lexer.next_token.lexeme.clone() {
             lexer.scan();
-            if let Token::Equal = lexer.next_token {
+            if let Lexeme::Equal = lexer.next_token.lexeme {
                 lexer.scan();
                 let expr = expr(lexer)?;
                 let stmt = Expr::Let(i, Box::new(expr));
 
                 Ok(stmt)
             } else {
-                Err(ParserError::UnexpectedToken(lexer.next_token.clone()))
+                Err(ParserError::ExpectedButGot(
+                    vec![Lexeme::Equal],
+                    lexer.next_token.clone(),
+                ))
             }
         } else {
-            Err(ParserError::UnexpectedToken(lexer.next_token.clone()))
+            Err(ParserError::ExpectedButGot(
+                vec![Lexeme::Identifier(String::new())],
+                lexer.next_token.clone(),
+            ))
         }
     } else {
-        Err(ParserError::UnexpectedToken(lexer.next_token.clone()))
+        Err(ParserError::ExpectedButGot(
+            vec![Lexeme::Let],
+            lexer.next_token.clone(),
+        ))
     }
 }
 
@@ -179,18 +232,18 @@ fn statement(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     let expr = expr(lexer)?;
 
     if let Expr::Block(_) = &expr {
-        if let Token::SemiColon = lexer.next_token {
+        if let Lexeme::SemiColon = lexer.next_token.lexeme {
             lexer.scan();
         }
         return Ok(expr);
     }
     if let Expr::FunctionDeclaration(..) = &expr {
-        if let Token::SemiColon = lexer.next_token {
+        if let Lexeme::SemiColon = lexer.next_token.lexeme {
             lexer.scan();
         }
         return Ok(expr);
     }
-    if let Token::SemiColon = lexer.next_token {
+    if let Lexeme::SemiColon = lexer.next_token.lexeme {
         lexer.scan();
         return Ok(expr);
     } else if let Expr::Return(..) = expr {
@@ -204,7 +257,7 @@ pub fn program(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
     let mut o = Vec::new();
 
     loop {
-        if let Token::EOF = lexer.next_token {
+        if let Lexeme::EOF = lexer.next_token.lexeme {
             return Ok(o);
         } else {
             let stmt = statement(lexer)?;
@@ -224,7 +277,7 @@ fn expr_list(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
     }
 
     loop {
-        if let Token::Comma = lexer.next_token {
+        if let Lexeme::Comma = lexer.next_token.lexeme {
             lexer.scan();
             exprs.push(expr(lexer)?);
         } else {
@@ -236,27 +289,33 @@ fn expr_list(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
 }
 
 fn array(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    if let Token::LBracket = lexer.next_token {
+    if let Lexeme::LBracket = lexer.next_token.lexeme {
         lexer.scan();
         let exprs = expr_list(lexer)?;
-        if let Token::RBracket = lexer.next_token {
+        if let Lexeme::RBracket = lexer.next_token.lexeme {
             lexer.scan();
             return Ok(Expr::Array(exprs));
         } else {
-            return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+            Err(ParserError::ExpectedButGot(
+                vec![Lexeme::RBracket],
+                lexer.next_token.clone(),
+            ))
         }
     } else {
-        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+        Err(ParserError::ExpectedButGot(
+            vec![Lexeme::LBracket],
+            lexer.next_token.clone(),
+        ))
     }
 }
 
 fn block_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    if let Token::LBrace = lexer.next_token {
+    if let Lexeme::LBrace = lexer.next_token.lexeme {
         lexer.scan();
         let mut o = Vec::new();
 
         loop {
-            if let Token::RBrace = lexer.next_token {
+            if let Lexeme::RBrace = lexer.next_token.lexeme {
                 lexer.scan();
                 return Ok(Expr::Block(o));
             }
@@ -265,33 +324,39 @@ fn block_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
             o.push(stmt);
         }
     } else {
-        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+        Err(ParserError::ExpectedButGot(
+            vec![Lexeme::LBrace],
+            lexer.next_token.clone(),
+        ))
     }
 }
 
 fn return_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    if let Token::Return = lexer.next_token {
+    if let Lexeme::Return = lexer.next_token.lexeme {
         lexer.scan();
         let expr = expr(lexer)?;
 
         return Ok(Expr::Return(Box::new(expr)));
     } else {
-        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+        Err(ParserError::ExpectedButGot(
+            vec![Lexeme::Return],
+            lexer.next_token.clone(),
+        ))
     }
 }
 
 fn identifier_list(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
     let mut identifiers = Vec::new();
 
-    if let Token::Identifier(i) = lexer.next_token.clone() {
+    if let Lexeme::Identifier(i) = lexer.next_token.lexeme.clone() {
         lexer.scan();
         identifiers.push(Expr::Ident(i))
     }
 
     loop {
-        if let Token::Comma = lexer.next_token {
+        if let Lexeme::Comma = lexer.next_token.lexeme {
             lexer.scan();
-            if let Token::Identifier(i) = lexer.next_token.clone() {
+            if let Lexeme::Identifier(i) = lexer.next_token.lexeme.clone() {
                 lexer.scan();
                 identifiers.push(Expr::Ident(i))
             }
@@ -306,31 +371,40 @@ fn identifier_list(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
 }
 
 fn function_declaration(lexer: &mut Lexer) -> ParseResult {
-    if let Token::Fn = lexer.next_token {
+    if let Lexeme::Fn = lexer.next_token.lexeme {
         lexer.scan();
         let mut id = None;
-        if let Token::Identifier(i) = lexer.next_token.clone() {
+        if let Lexeme::Identifier(i) = lexer.next_token.lexeme.clone() {
             lexer.scan();
             id = Some(i);
         }
 
-        if let Token::LParen = lexer.next_token {
+        if let Lexeme::LParen = lexer.next_token.lexeme {
             lexer.scan();
             let list = identifier_list(lexer)?;
 
-            if let Token::RParen = lexer.next_token {
+            if let Lexeme::RParen = lexer.next_token.lexeme {
                 lexer.scan();
 
                 let block = block_expr(lexer)?;
 
                 return Ok(Expr::FunctionDeclaration(id, list, Box::new(block)));
             } else {
-                return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+                Err(ParserError::ExpectedButGot(
+                    vec![Lexeme::RParen],
+                    lexer.next_token.clone(),
+                ))
             }
         } else {
-            return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+            Err(ParserError::ExpectedButGot(
+                vec![Lexeme::LParen],
+                lexer.next_token.clone(),
+            ))
         }
     } else {
-        return Err(ParserError::UnexpectedToken(lexer.next_token.clone()));
+        Err(ParserError::ExpectedButGot(
+            vec![Lexeme::Fn],
+            lexer.next_token.clone(),
+        ))
     }
 }

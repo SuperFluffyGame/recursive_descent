@@ -1,7 +1,7 @@
 fn double(a) {
     let c = 2;
     return a * c;
-    print("Unreachable");
+    print("Unreachable"
 };
 
 let b = 2;

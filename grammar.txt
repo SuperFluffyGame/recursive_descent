@@ -1,24 +1,24 @@
-Expr -> AssignmentExpr
-AssignmentExpr -> AddExpr (= AddExpr)*
-AddExpr -> MulExpr (+|- MulExpr)*
-MulExpr -> UnaryExpr (*|/ UnaryExpr)*
-UnaryExpr -> -ExpExpr | ExpExpr
-ExpExpr -> FunctionCall (^ UnaryExpr)*
-FunctionCall -> PrimaryExpr ('(' ExprList ')')*
+Expr -> AssignmentExpr;
+AssignmentExpr -> AddExpr ("=" AddExpr)*;
+AddExpr -> MulExpr ("+"|"-" MulExpr)*;
+MulExpr -> UnaryExpr ("*"|"/" UnaryExpr)*;
+UnaryExpr -> -ExpExpr | ExpExpr;
+ExpExpr -> FunctionCall ("^" UnaryExpr)*;
+FunctionCall -> PrimaryExpr ("(" ExprList ")")*;
 
-PrimaryExpr -> FunctionDeclaration | Block | LetExpr  | ID | Number | '(' Expr ')'
+PrimaryExpr -> FunctionDeclaration | Block | LetExpr  | ID | Number | "(" Expr ")";
 
-LetExpr -> let ID = Expr
-ReturnExpr -> Expr | return Expr
+LetExpr -> "let" ID "=" Expr;
+ReturnExpr -> Expr | "return" Expr;
 
-Statement -> Expr ;
+Statement -> Expr ";";
 
-Program -> Statement*
+Program -> Statement*;
 
-ExprList -> Expr? (, Expr)*
-FunctionCall -> Expr '(' ExprList ')'
-Array -> '[' ExprList ']'
-Block -> '{' Statement* '}'
+ExprList -> Expr? ("," Expr)*;
+FunctionCall -> Expr "(" ExprList ")";
+Array -> "[" ExprList "]";
+Block -> "{" Statement* "}";
 
-IdentifierList -> ID? (, ID)*
-FunctionDeclaration -> fn ID? '(' ID* ')' Block
+IdentifierList -> ID? ("," ID)*;
+FunctionDeclaration -> "fn" ID? "(" ID* ")" Block;
