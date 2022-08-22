@@ -193,6 +193,8 @@ fn statement(lexer: &mut Lexer) -> Result<Expr, ParserError> {
     if let Token::SemiColon = lexer.next_token {
         lexer.scan();
         return Ok(expr);
+    } else if let Expr::Return(..) = expr {
+        return Ok(expr);
     } else {
         return Ok(Expr::Return(Box::new(expr)));
     }

@@ -17,7 +17,7 @@ fn main() {
     let o = parse(&mut lexer).unwrap();
     let b = std::time::Instant::now();
 
-    println!("TREE: {:?}", o);
+    // println!("TREE: {:?}", o);
     println!("PARSE: {:?}", b - a);
 
     let a = std::time::Instant::now();
