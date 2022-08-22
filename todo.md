@@ -3,7 +3,8 @@
 3. Non let assignment [DONE]
 4. Organization
 5. Blocks [DONE]
-6. Function Making
-7. Loops, and Ifs
-8. Actually Make The Interpreter Good
-9. Language Server?
+6. Function Making [DONE]
+7. Validation
+8. Loops, and Ifs
+9. Actually Make The Interpreter Good
+10. Language Server?
