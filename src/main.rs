@@ -21,7 +21,7 @@ fn main() {
     println!("PARSE: {:?}", b - a);
 
     let a = std::time::Instant::now();
-    run(&o).unwrap();
+    run(o).unwrap();
     let b = std::time::Instant::now();
     println!("INTERPRET: {:?}", b - a);
 }

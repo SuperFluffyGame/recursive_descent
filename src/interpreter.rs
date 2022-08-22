@@ -7,25 +7,34 @@ pub enum InterpreterError {
     NotAFunction(String),
     VariableDoesntExist(String),
     InvalidLeftHandSide(Expr),
+    FunctionArgNotIdentifier,
 }
 
-pub fn run(exprs: &Vec<Expr>) -> Result<(), InterpreterError> {
+pub fn run(exprs: Vec<Expr>) -> Result<(), InterpreterError> {
     let mut memory: Memory = HashMap::new();
 
-    for expr in exprs.iter() {
-        eval_expr(&mut memory, expr)?;
-    }
+    memory.insert(
+        "print".to_string(),
+        Value::CoreFunction(Some("print".to_string()), Box::new(&print)),
+    );
+
+    eval_block(&mut memory, Expr::Block(exprs))?;
 
     Ok(())
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 enum Value {
     String(String),
     Number(f64),
     Array(Vec<Value>),
     None,
-    Function(Option<String>, Vec<String>, Expr),
+    Function(Option<String>, Vec<FunctionArg>, Expr),
+    CoreFunction(Option<String>, Box<&'static dyn Fn(&Vec<Value>) -> Value>),
+}
+#[derive(Clone)]
+struct FunctionArg {
+    name: String,
 }
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -53,16 +62,29 @@ impl std::fmt::Display for Value {
                 }
                 o += "]";
             }
-            Value::Function(args, _block) => {
-                o += "fn (";
+            Value::Function(name, args, _block) => {
+                o += "fn ";
+                if let Some(n) = name {
+                    o += n;
+                }
+                o += " (";
+
                 for (i, arg) in args.iter().enumerate() {
-                    o += arg;
+                    o += &arg.name;
                     if i == args.len() - 1 {
                         break;
                     }
                     o += ", ";
                 }
                 o += ") { [CODE] }"
+            }
+            Value::CoreFunction(name, _f) => {
+                o += "core fn ";
+                if let Some(n) = name {
+                    o += n;
+                }
+
+                o += "() { [CODE] }"
             }
         }
         write!(f, "{}", o)
@@ -72,20 +94,26 @@ impl std::fmt::Display for Value {
 fn run_function(
     memory: &mut Memory,
     value_to_call: Value,
-    args: &Vec<Expr>,
+    args: &Vec<Value>,
 ) -> Result<Value, InterpreterError> {
-    todo!();
+    if let Value::CoreFunction(_name, f) = value_to_call {
+        Ok(f(args))
+    } else if let Value::Function(_name, func_args, e) = value_to_call {
+        let mut memory_with_args = memory.clone();
+        for (i, func_arg) in func_args.into_iter().enumerate() {
+            let value = args.get(i);
 
-    // if name == "print" {
-    //     let mut vals = Vec::new();
-    //     for a in args {
-    //         vals.push(eval_expr(memory, a)?);
-    //     }
-    //     print(&vals)?;
-    //     return Ok(Value::None);
-    // } else {
-    //     panic!("Function doesnt exists")
-    // }
+            if let Some(v) = value {
+                memory_with_args.insert(func_arg.name, v.clone());
+            } else {
+                memory_with_args.insert(func_arg.name, Value::None);
+            }
+        }
+
+        eval_block(&mut memory_with_args, e)
+    } else {
+        Err(InterpreterError::NotAFunction(format!("{}", value_to_call)))
+    }
 }
 
 fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError> {
@@ -106,7 +134,18 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
                 return Err(InterpreterError::VariableDoesntExist(i.clone()));
             }
         }
-        Expr::FunctionCall(name, args) => run_function(memory, eval_expr(memory, expr)?, args),
+        Expr::FunctionCall(to_call, args_expr) => {
+            let value_to_call = eval_expr(memory, to_call)?;
+
+            let mut args = Vec::new();
+
+            for arg_expr in args_expr {
+                let arg = eval_expr(memory, arg_expr)?;
+                args.push(arg);
+            }
+
+            run_function(memory, value_to_call, &args)
+        }
         Expr::Add(a, b) => {
             let a = eval_expr(memory, a)?;
             let b = eval_expr(memory, b)?;
@@ -121,6 +160,11 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
             let a = eval_expr(memory, a)?;
             let b = eval_expr(memory, b)?;
             exp(&a, &b)
+        }
+        Expr::Mul(a, b) => {
+            let a = eval_expr(memory, a)?;
+            let b = eval_expr(memory, b)?;
+            mul(&a, &b)
         }
         Expr::Array(exprs) => {
             let mut o = Vec::new();
@@ -140,17 +184,30 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
 
             return Ok(val);
         }
-        // Expr::FunctionDeclaration(name, args, block) => Value::F
-        _ => todo!(),
+        Expr::FunctionDeclaration(name, arg_exprs, block) => {
+            let mut args = Vec::new();
+            for arg in arg_exprs {
+                if let Expr::Ident(i) = arg {
+                    args.push(FunctionArg { name: i.clone() })
+                } else {
+                    return Err(InterpreterError::FunctionArgNotIdentifier);
+                }
+            }
+
+            Ok(Value::Function(name.clone(), args, *block.clone()))
+        }
+        _ => {
+            panic!("NOT YET IMPLEMENTED: {:?}", expr);
+        }
     }
 }
 
-fn print(args: &Vec<Value>) -> Result<Value, InterpreterError> {
-    for arg in args {
-        println!("{}", arg);
+fn print(values: &Vec<Value>) -> Value {
+    for val in values {
+        println!("{}", val);
     }
 
-    Ok(Value::None)
+    Value::None
 }
 
 fn add(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
@@ -172,3 +229,35 @@ fn exp(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
         _ => panic!("Cannot Add"),
     }
 }
+fn mul(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
+    match (a, b) {
+        (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a * b)),
+        _ => panic!("Cannot Add"),
+    }
+}
+
+fn eval_block(memory: &mut Memory, e: Expr) -> Result<Value, InterpreterError> {
+    if let Expr::Block(v) = e {
+        for expr in v {
+            if let Expr::Return(e) = expr {
+                return eval_expr(memory, &e);
+            } else if let Expr::FunctionDeclaration(ref name, ..) = expr {
+                if let Some(n) = name {
+                    let f = eval_expr(memory, &expr)?;
+                    memory.insert(n.clone(), f);
+                }
+            } else {
+                eval_expr(memory, &expr)?;
+            }
+        }
+    }
+
+    Ok(Value::None)
+}
+
+// fn merge_map<'a, K: std::hash::Hash + Eq, V>(
+//     map1: &'a HashMap<K, V>,
+//     map2: &'a HashMap<K, V>,
+// ) -> &'a HashMap<K, V> {
+//     map1.into_iter().chain(map2).collect()
+// }

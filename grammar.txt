@@ -3,9 +3,10 @@ AssignmentExpr -> AddExpr (= AddExpr)*
 AddExpr -> MulExpr (+|- MulExpr)*
 MulExpr -> UnaryExpr (*|/ UnaryExpr)*
 UnaryExpr -> -ExpExpr | ExpExpr
-ExpExpr -> ExpExpr (^ UnaryExpr)*
+ExpExpr -> FunctionCall (^ UnaryExpr)*
+FunctionCall -> PrimaryExpr ('(' ExprList ')')*
 
-PrimaryExpr -> FunctionDeclaration | Block | LetExpr | FunctionCall | ID | Number | '(' Expr ')'
+PrimaryExpr -> FunctionDeclaration | Block | LetExpr  | ID | Number | '(' Expr ')'
 
 LetExpr -> let ID = Expr
 ReturnExpr -> Expr | return Expr
@@ -15,7 +16,7 @@ Statement -> Expr ;
 Program -> Statement*
 
 ExprList -> Expr? (, Expr)*
-FunctionCall -> ID '(' ExprList ')'
+FunctionCall -> Expr '(' ExprList ')'
 Array -> '[' ExprList ']'
 Block -> '{' Statement* '}'
 

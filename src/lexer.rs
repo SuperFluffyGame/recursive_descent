@@ -33,7 +33,7 @@ pub enum Token {
 #[derive(Clone)]
 pub struct Lexer {
     input: String,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     index: usize,
     pub next_token: Token,
 }
@@ -104,7 +104,7 @@ impl Lexer {
 
                         match &s as &str {
                             "let" => kw_token = Some(Token::Let),
-                            "return " => kw_token = Some(Token::Return),
+                            "return" => kw_token = Some(Token::Return),
                             "fn" => kw_token = Some(Token::Fn),
                             _ => {}
                         }
