@@ -1,8 +1,8 @@
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process;
-
 use clap::Parser;
+
 use recursive_descent::interpreter::run;
 use recursive_descent::lexer::Lexer;
 use recursive_descent::parser::program as parse;
@@ -21,7 +21,11 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let mut file = std::fs::File::open(args.file).unwrap();
+    let mut file = std::fs::File::open(
+        args.file,
+    )
+    .unwrap();
+
     let mut input: String = String::new();
     file.read_to_string(&mut input).unwrap();
 
