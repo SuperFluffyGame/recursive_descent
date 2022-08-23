@@ -1,10 +1,13 @@
 1. Comments
-2. Make Everything and Expression [DONE]
-3. Non let assignment [DONE]
-4. Organization
-5. Blocks [DONE]
-6. Function Making [DONE]
-7. Validation
-8. Loops, and Ifs
-9. Actually Make The Interpreter Good
-10. Language Server?
+2. Whitespace Tokens
+3. Full Syntax Tree for formatting.
+4. Make Everything and Expression [DONE]
+5. Non let assignment [DONE]
+6. Organization
+7. Blocks [DONE]
+8. Function Making [DONE]
+9. Validation
+10. Basic Error Handling [DONE]
+11. Loops, and Ifs
+12. Actually Make The Interpreter Good
+13. Language Server?

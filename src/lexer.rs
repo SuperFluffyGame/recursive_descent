@@ -100,6 +100,7 @@ impl Lexer {
         let mut chars = self.input.chars().peekable();
 
         while let Some(c) = chars.next() {
+            column += 1;
             let lexeme = match c {
                 '+' => Lexeme::Plus,
                 '-' => Lexeme::Minus,
@@ -132,11 +133,6 @@ impl Lexer {
                         s.push(c);
                     }
                     Lexeme::String(s)
-                }
-                ' ' => {
-                    column += 1;
-
-                    continue;
                 }
                 '\n' => {
                     line += 1;

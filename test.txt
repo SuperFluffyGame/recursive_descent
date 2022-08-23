@@ -1,11 +1,14 @@
 fn double(a) {
     let c = 2;
-    return a * c;
-    print("Unreachable"
+    a * c
 };
 
-let b = 2;
 
-a = b ** 3;
+let c = fn (a) {
+    let c = 2;
+    a * c
+}(2);
 
-print(a, double(a));
+
+
+print(c);
