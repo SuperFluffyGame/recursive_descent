@@ -46,7 +46,7 @@ fn main() {
 
     let b = std::time::Instant::now();
 
-    // println!("TREE: {:?}", o);
+    println!("TREE: {:?}", tree);
     println!("PARSE: {:?}", b - a);
 
     let a = std::time::Instant::now();

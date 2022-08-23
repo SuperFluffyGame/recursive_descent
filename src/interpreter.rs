@@ -196,6 +196,12 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
 
             Ok(Value::Function(name.clone(), args, *block.clone()))
         }
+        Expr::Index(a, b) => {
+            let eval_a = eval_expr(memory, a)?;
+            let eval_b = eval_expr(memory, b)?;
+            index(&eval_a, &eval_b)
+        }
+        Expr::Block(_) => eval_block(memory, expr.clone()),
         _ => {
             panic!("NOT YET IMPLEMENTED: {:?}", expr);
         }
@@ -203,10 +209,14 @@ fn eval_expr(memory: &mut Memory, expr: &Expr) -> Result<Value, InterpreterError
 }
 
 fn print(values: &Vec<Value>) -> Value {
-    for val in values {
-        println!("{}", val);
+    let mut to_print = String::new();
+    for (i, val) in values.iter().enumerate() {
+        to_print += &format!("{}", val);
+        if i < values.len() {
+            to_print += " ";
+        }
     }
-
+    println!("{}", to_print);
     Value::None
 }
 
@@ -220,19 +230,32 @@ fn add(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
 fn sub(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
     match (a, b) {
         (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a - b)),
-        _ => panic!("Cannot Add"),
+        _ => panic!("Cannot Sub"),
     }
 }
 fn exp(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
     match (a, b) {
         (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.powf(*b))),
-        _ => panic!("Cannot Add"),
+        _ => panic!("Cannot Exp"),
     }
 }
 fn mul(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
     match (a, b) {
         (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a * b)),
-        _ => panic!("Cannot Add"),
+        _ => panic!("Cannot Mul"),
+    }
+}
+
+fn index(a: &Value, b: &Value) -> Result<Value, InterpreterError> {
+    match (a, b) {
+        (Value::Array(v), Value::Number(n)) => {
+            let possible = v.get(*n as usize);
+            match possible {
+                Some(v) => return Ok(v.clone()),
+                None => return Ok(Value::None),
+            }
+        }
+        _ => panic!("Cannot Index"),
     }
 }
 
@@ -258,6 +281,6 @@ fn eval_block(memory: &mut Memory, e: Expr) -> Result<Value, InterpreterError> {
 // fn merge_map<'a, K: std::hash::Hash + Eq, V>(
 //     map1: &'a HashMap<K, V>,
 //     map2: &'a HashMap<K, V>,
-// ) -> &'a HashMap<K, V> {
-//     map1.into_iter().chain(map2).collect()
+// ) -> HashMap<&'a K, &'a V> {
+//     map1.iter().chain(map2.iter()).collect()
 // }

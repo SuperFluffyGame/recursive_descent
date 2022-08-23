@@ -4,11 +4,12 @@ fn double(a) {
 };
 
 
-let c = fn (a) {
-    let c = 2;
-    a * c
-}(2);
+let a = {
+    let b = 2;
+    b * 2
+};
+
+let b = [2][1];
 
 
-
-print(c);
+print(a, b);

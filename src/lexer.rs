@@ -99,7 +99,7 @@ impl Lexer {
         let mut column = 0;
         let mut chars = self.input.chars().peekable();
 
-        while let Some(c) = chars.next() {
+        'outer: while let Some(c) = chars.next() {
             column += 1;
             let lexeme = match c {
                 '+' => Lexeme::Plus,
@@ -124,6 +124,16 @@ impl Lexer {
                 ',' => Lexeme::Comma,
                 '{' => Lexeme::LBrace,
                 '}' => Lexeme::RBrace,
+                '#' => {
+                    while let Some(c) = chars.peek() {
+                        if c == &'\n' {
+                            continue 'outer;
+                        } else {
+                            chars.next();
+                        }
+                    }
+                    continue;
+                }
                 '"' => {
                     let mut s = String::new();
                     while let Some(c) = chars.next() {

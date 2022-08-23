@@ -16,6 +16,7 @@ pub enum Expr {
 
     FunctionCall(Box<Expr>, Vec<Expr>),
     Array(Vec<Expr>),
+    Index(Box<Expr>, Box<Expr>),
 
     Block(Vec<Expr>),
     Let(String, Box<Expr>),

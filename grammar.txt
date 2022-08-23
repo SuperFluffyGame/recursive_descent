@@ -4,7 +4,8 @@ AddExpr -> MulExpr ("+"|"-" MulExpr)*;
 MulExpr -> UnaryExpr ("*"|"/" UnaryExpr)*;
 UnaryExpr -> -ExpExpr | ExpExpr;
 ExpExpr -> FunctionCall ("^" UnaryExpr)*;
-FunctionCall -> PrimaryExpr ("(" ExprList ")")*;
+FunctionCall -> IndexExpr ("(" ExprList ")")*;
+IndexExpr -> PrimaryExpr ("[" Expr "]")*
 
 PrimaryExpr -> FunctionDeclaration | Block | LetExpr  | ID | Number | "(" Expr ")";
 

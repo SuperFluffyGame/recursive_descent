@@ -176,7 +176,7 @@ fn exp_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
 }
 
 fn function_call(lexer: &mut Lexer) -> Result<Expr, ParserError> {
-    let mut a = primary_expr(lexer)?;
+    let mut a = index_expr(lexer)?;
 
     loop {
         if let Lexeme::LParen = lexer.next_token.lexeme {
@@ -188,6 +188,28 @@ fn function_call(lexer: &mut Lexer) -> Result<Expr, ParserError> {
             } else {
                 return Err(ParserError::ExpectedButGot(
                     vec![Lexeme::RParen],
+                    lexer.next_token.clone(),
+                ));
+            }
+        } else {
+            return Ok(a);
+        }
+    }
+}
+
+fn index_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
+    let mut a = primary_expr(lexer)?;
+
+    loop {
+        if let Lexeme::LBracket = lexer.next_token.lexeme {
+            lexer.scan();
+            let expr = expr(lexer)?;
+            if let Lexeme::RBracket = lexer.next_token.lexeme {
+                lexer.scan();
+                a = Expr::Index(Box::new(a), Box::new(expr));
+            } else {
+                return Err(ParserError::ExpectedButGot(
+                    vec![Lexeme::RBracket],
                     lexer.next_token.clone(),
                 ));
             }
