@@ -9,7 +9,11 @@ let a = {
     b * 2
 };
 
-let b = [2][1];
+let b = [1,2];
+
+# const c = 1;
+
+let [d, e] = b;
 
 
 print(a, b);

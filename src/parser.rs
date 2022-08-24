@@ -30,7 +30,7 @@ impl std::fmt::Display for ParserError {
                     expected_string,
                     got.lexeme,
                     got.line + 1,
-                    got.column + 1
+                    got.column + 2,
                 );
 
                 writeln!(f, "{}", string)
@@ -70,16 +70,11 @@ fn primary_expr(lexer: &mut Lexer) -> Result<Expr, ParserError> {
         Lexeme::LParen,
     ];
 
-    let mut let_lexer = lexer.clone();
-    let let_expr = let_expr(&mut let_lexer);
-    if let Ok(expr) = let_expr {
-        *lexer = let_lexer;
-        return Ok(expr);
-    }
-
     let tok = lexer.next_token.clone();
     let lexeme = tok.lexeme.clone();
-    if let Lexeme::Identifier(i) = lexeme {
+    if let Lexeme::Let = lexeme {
+        return let_expr(lexer);
+    } else if let Lexeme::Identifier(i) = lexeme {
         lexer.scan();
         return Ok(Expr::Ident(i));
     } else if let Lexeme::String(s) = lexeme {
@@ -388,8 +383,6 @@ fn identifier_list(lexer: &mut Lexer) -> Result<Vec<Expr>, ParserError> {
     }
 
     Ok(identifiers)
-
-    // todo!()
 }
 
 fn function_declaration(lexer: &mut Lexer) -> ParseResult {
