@@ -54,7 +54,7 @@ impl std::fmt::Display for Lexeme {
             Lexeme::SemiColon => write!(f, r#"";""#),
             Lexeme::Slash => write!(f, r#""/""#),
             Lexeme::String(_) => write!(f, r#"STRING"#),
-            Lexeme::Unexpected(_) => write!(f, ""),
+            Lexeme::Unexpected(c) => write!(f, r#""{}""#, c),
         }
     }
 }

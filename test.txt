@@ -11,9 +11,15 @@ let a = {
 
 let b = [1,2];
 
-# const c = 1;
+# const c = 1; 
+###
 
-let [d, e] = b;
+######
+
+print("AHAHHAHAHAA", 1);
 
 
-print(a, b);
+let c = b[2];
+
+
+print(a, b, c);

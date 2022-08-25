@@ -15,7 +15,7 @@ impl std::fmt::Display for ParserError {
                 let mut expected_string = String::new();
 
                 for (i, expected) in expected_vec.iter().enumerate() {
-                    if expected_vec.len() > 1 && i == expected_vec.len() - 2 {
+                    if expected_vec.len() > 1 && i == expected_vec.len() - 1 {
                         expected_string += &format!(", or {}", expected);
                         break;
                     } else if i == 0 {
@@ -406,7 +406,7 @@ fn function_declaration(lexer: &mut Lexer) -> ParseResult {
                 return Ok(Expr::FunctionDeclaration(id, list, Box::new(block)));
             } else {
                 Err(ParserError::ExpectedButGot(
-                    vec![Lexeme::RParen],
+                    vec![Lexeme::RParen, Lexeme::Comma],
                     lexer.next_token.clone(),
                 ))
             }
